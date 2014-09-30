@@ -3,35 +3,63 @@ import unittest2
 from .. import core
 
 
+# +---+     +---+
+# | 1 |     | 2 |
+# +---+     +---+
 def bn_2_ind():
     g = core.BayesNet()
     g.add_nodes_from([1, 2])
     return g
 
+# +---+     +---+
+# | 1 |---->| 2 |
+# +---+     +---+
 def bn_2_dep():
     g = core.BayesNet()
     g.add_nodes_from([1, 2])
     g.add_edge(1, 2)
     return g
 
+# +---+     +---+     +---+
+# | 1 |---->| 2 |---->| 3 |
+# +---+     +---+     +---+
 def bn_3_chain():
     g = core.BayesNet()
     g.add_nodes_from([1, 2, 3])
     g.add_edges_from([(1, 2), (2, 3)])
     return g
 
+# +---+     +---+     +---+
+# | 2 |<----| 1 |---->| 3 |
+# +---+     +---+     +---+
 def bn_3_naive():
     g = core.BayesNet()
     g.add_nodes_from([1, 2, 3])
     g.add_edges_from([(1, 2), (1, 3)])
     return g
 
+# +---+     +---+     +---+
+# | 2 |---->| 1 |<----| 3 |
+# +---+     +---+     +---+
 def bn_3_vstruct():
     g = core.BayesNet()
     g.add_nodes_from([1, 2, 3])
     g.add_edges_from([(2, 1), (3, 1)])
     return g
 
+# +---+          
+# | 1 |          
+# +-+-+          
+#   |            
+#   v            
+# +---+     +---+
+# | 3 |<----| 2 |
+# +---+     +---+
+#   |         |  
+#   v         |  
+# +---+       |  
+# | 4 |<------+  
+# +---+          
 def bn_4_koller():
     g = core.BayesNet()
     g.add_nodes_from([1, 2, 3, 4])
@@ -97,6 +125,48 @@ class TestDSeparation(unittest2.TestCase):
     def test_anc_4_koller_1(self):
         self.check_anc(bn_4_koller(), [1], [1])
 
-    def check_dsep(self, g, x, z, correct):
-        dep = g.dsep(x, z)
+    def check_reach(self, g, x, z, correct):
+        dep = g.get_reachable(x, z)
         self.assertEqual(dep, set(correct))
+
+    def test_reach_2_ind_1(self):
+        self.check_reach(bn_2_ind(), 1, None, [])
+
+    def test_reach_2_ind_2(self):
+        self.check_reach(bn_2_ind(), 2, None, [])
+
+    def test_reach_3_chain_1(self):
+        self.check_reach(bn_3_chain(), 1, None, [2, 3])
+
+    def test_reach_3_chain_2(self):
+        self.check_reach(bn_3_chain(), 3, None, [1, 2])
+
+    def test_reach_3_chain_3(self):
+        self.check_reach(bn_3_chain(), 1, [1], [])
+
+    def test_reach_3_chain_4(self):
+        self.check_reach(bn_3_chain(), 1, [2], [])
+
+    def test_reach_3_naive_1(self):
+        self.check_reach(bn_3_naive(), 2, None, [1, 3])
+
+    def test_reach_3_naive_2(self):
+        self.check_reach(bn_3_naive(), 1, None, [2, 3])
+
+    def test_reach_3_naive_3(self):
+        self.check_reach(bn_3_naive(), 2, [1], [])
+
+    def test_reach_3_vstruct_1(self):
+        self.check_reach(bn_3_vstruct(), 2, None, [1])
+
+    def test_reach_3_vstruct_2(self):
+        self.check_reach(bn_3_vstruct(), 2, [1], [3])
+
+    def test_reach_4_koller_1(self):
+        self.check_reach(bn_4_koller(), 4, [3], [1, 2])
+
+    def test_reach_4_koller_2(self):
+        self.check_reach(bn_4_koller(), 4, None, [1, 2, 3])
+
+    def test_reach_4_koller_3(self):
+        self.check_reach(bn_4_koller(), 2, [3], [1, 4])
