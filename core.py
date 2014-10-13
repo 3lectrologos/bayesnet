@@ -87,15 +87,21 @@ class FactorGraph:
                                edge_color='#bbbbbb',
                                width=2)
         nx.draw_networkx_nodes(g, pos, nodelist=self.vs.values(),
-                               node_size=500,
+                               node_size=1000,
                                node_color='#2c7bb6')
         nx.draw_networkx_labels(g, pos, {v: v.variable.name
                                          for v in self.vs.values()},
-                                font_color='#eeeeee')
+                                font_color='#cccccc')
         nx.draw_networkx_nodes(g, pos, nodelist=self.fs.values(),
-                               node_size=200,
+                               node_size=300,
                                node_color='#fdae61',
                                node_shape='s')
+
+    def var(self, name):
+        for v in self.vs:
+            if v.name == name:
+                return v
+        raise KeyError('Variable not found in factor graph')
 
     def run_bp(self, niter):
         for v in self.vs.values():
@@ -109,6 +115,12 @@ class FactorGraph:
             for v in self.vs:
                 marg[v].append(self.get_marginal(v))
         return marg
+        
+    def condition(self, obs):
+        for var, z in obs.iteritems():
+            vals = {(d,): 0 for d in var.domain}
+            vals[(z,)] = 1
+            self.add_factor(Factor((var,), vals))
 
     def get_marginal(self, var):
         return self.vs[var].marginal()        
@@ -126,7 +138,11 @@ class Factor:
         self.variables = variables
         self.cpt = cpt
         for k, v in self.cpt.iteritems():
-            self.cpt[k] = np.log(v)
+            # Just to avoid annoying numpy warnings
+            if v == 0:
+                self.cpt[k] = -1e6
+            else:
+                self.cpt[k] = np.log(v)
 
 class Node(object):
     def __init__(self):
@@ -258,10 +274,51 @@ def two_nodes_three_values():
                }))
     return g
 
+def earthquake():
+    e = Variable('Earthquake', (0, 1))
+    b = Variable('Burglar', (0, 1))
+    r = Variable('Radio', (0, 1))
+    a = Variable('Alarm', (0, 1))
+    p = Variable('Phone', (0, 1))
+    g = FactorGraph()
+    g.add_factor(Factor((e,), {(0,): 0.999, (1,): 0.001}))
+    g.add_factor(Factor((b,), {(0,): 0.999, (1,): 0.001}))
+    g.add_factor(Factor((b, e, a),
+                        {(0, 0, 0): 0.999,
+                         (0, 0, 1): 0.001,
+                         (1, 0, 0): 0.00999,
+                         (1, 0, 1): 0.99001,
+                         (0, 1, 0): 0.98901,
+                         (0, 1, 1): 0.01099,
+                         (1, 1, 0): 0.0098901,
+                         (1, 1, 1): 0.9901099
+                        }))
+    g.add_factor(Factor((a, p),
+                        {(0, 1): 0,
+                         (0, 0): 1,
+                         (1, 0): 0.5,
+                         (1, 1): 0.5
+                        }))
+    g.add_factor(Factor((e, r),
+                        {(0, 1): 0,
+                         (0, 0): 1,
+                         (1, 0): 0.2,
+                         (1, 1): 0.8
+                        }))
+    return g
+
 if __name__ == '__main__':
-    g = vstruct()
+    g = earthquake()
     g.draw()
     plt.show()
 
+    marg = g.run_bp(10)
+    plot_marginals(marg)
+
+    g.condition({g.var('Phone'): 1})
+    marg = g.run_bp(10)
+    plot_marginals(marg)
+
+    g.condition({g.var('Radio'): 1})
     marg = g.run_bp(10)
     plot_marginals(marg)
