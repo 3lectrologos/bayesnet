@@ -9,6 +9,13 @@ class BayesNet(nx.DiGraph):
         super(BayesNet, self).__init__()
 
     def get_ancestors(self, z):
+        """Get all ancestors of all variables in z.
+        Args:
+          z (set(Variable)): A set of variables.
+        
+        Returns:
+          set(Variable): The set of ancestors.
+        """
         to_visit = set(z)
         anc = set()
         while to_visit != set():
@@ -19,14 +26,26 @@ class BayesNet(nx.DiGraph):
         return anc
 
     def get_reachable(self, x, z=None):
+        """Get all nodes that are reachable from x, given observed nodes z.
+        
+        Args:
+          x (Variable): Source node.
+          z (set(Variable), optional): A set of observed variables. Defaults to
+            to None, which corresponds to no observations.
+
+        Returns:
+          set(Variable): The set of reachable nodes.
+        """
         if z == None: z = []
         z = set(z)
         assert x in set(self.nodes())
         assert z <= set(self.nodes())
+        # First find all ancestors of observed set z
+        ancz = self.get_ancestors(z)
+        # Then do a breadth-first search starting from x
         to_visit = set([(x, False)])
         visited = set()
         reachable = set()
-        ancz = self.get_ancestors(z)
         while to_visit != set():
             current = to_visit.pop()
             y, d = current
@@ -52,6 +71,9 @@ class BayesNet(nx.DiGraph):
         # Just a convention to not return the query node
         reachable.discard(x)
         return reachable
+
+    def draw(self):
+        nx.draw_networkx(self)
 
 class FactorGraph:
     def __init__(self):
