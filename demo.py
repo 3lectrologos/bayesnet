@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import core
 import examples_dsep
 
 

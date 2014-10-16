@@ -1,3 +1,6 @@
+import core
+
+
 def vstruct():
     g = core.BayesNet()
     g.add_variable('X', (0, 1))
@@ -19,6 +22,7 @@ def vstruct():
                (1, 1, 0): 0.001,
                (1, 1, 1): 0.999})
     return g
+
 
 def earthquake():
     g = core.BayesNet()
