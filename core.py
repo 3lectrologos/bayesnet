@@ -25,7 +25,10 @@ NODE_SHAPE_SOURCE = 'd'
 LABEL_COLOR = '#111111'
 
 
-Variable = namedtuple('Variable', 'name domain')
+class Variable:
+    def __init__(self, name, domain):
+        self.name = name
+        self.domain = domain
 
 
 class BayesNet(nx.DiGraph):
