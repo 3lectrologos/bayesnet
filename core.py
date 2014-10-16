@@ -1,14 +1,4 @@
-"""
-Homework 2 --- Bayesian Networks
-================================
-
-In this homework you have to implement d-separation. You will need the
-``networkx`` library with your package manager. Alternatively, you can use pip:
-
-    pip install networkx
-"""
-
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 import networkx as nx
 
 
@@ -129,7 +119,13 @@ class BayesNet(nx.DiGraph):
         assert observed <= set(self.nodes())
         # First, find all ancestors of observed set.
         ancestors = self.get_ancestors(observed)
-        # Then, perform breadth-first search starting from x.
+        # Then, perform breadth-first search starting from x. Nodes to be
+        # visited are stored as tuples with the following elements:
+        #         * the variable
+        #         * True, if the variable was reached from an incoming edge,
+        #           False, if it was reached from an outgoing edge.
+        # Any variable that is reached through an active path is stored in
+        # reachable.
         to_visit = set([(x, False)])
         visited = set()
         reachable = set()
@@ -159,9 +155,9 @@ class BayesNet(nx.DiGraph):
                 elif variable in ancestors:
                     for predecessor in self.predecessors_iter(variable):
                         to_visit.add((predecessor, False))
-        # Just a convention to not return the query node
+        # Just a convention to not return the query node.
         reachable.discard(x)
-        # Plot
+        # Optionally plot.
         if plot:
             self.draw(x, observed, reachable)
         return reachable
