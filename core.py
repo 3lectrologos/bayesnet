@@ -1,33 +1,39 @@
 from collections import defaultdict
 import networkx as nx
+from conf import *
 
 
-EDGE_COLOR = '#bbbbbb'
-EDGE_WIDTH = 2
-NODE_SIZE = 3000
-NODE_BORDER_COLOR = EDGE_COLOR
-NODE_BORDER_WIDTH = 3
-NODE_COLOR_NORMAL = '#3492d9'
-NODE_COLOR_SOURCE = '#2cb64e'
-NODE_COLOR_OBSERVED = '#d96b34'
-NODE_COLOR_REACHABLE = NODE_COLOR_SOURCE
-NODE_SHAPE_SOURCE = 'd'
-LABEL_COLOR = '#111111'
+EPS = 1e-10
+
+def is_valid_cpt(table):
+    """Check that ``table`` contains valid conditional prob. distributions.
+
+    Note that the conditional distributions are defined over the last variable
+    in the tuples, while all other variables are conditioned on.
+    """
+    probabilities = defaultdict(float)
+    for combination, value in table.iteritems():
+        if value < 0 or value > 1:
+            return False
+        probabilities[combination[:-1]] += value
+    return all(abs(total - 1) <= EPS for total in probabilities.values())
 
 
 class Variable:
-    def __init__(self, name, domain):
+    """A Bayesian network variable."""
+    def __init__(self, name, domain, parents=None, cpt=None):
         self.name = name
         self.domain = domain
+        self.parents = parents
+        self.cpt = cpt
 
 
 class BayesNet(nx.DiGraph):
-    """Represents a Bayesian network as a directed graph."""
+    """A Bayesian network as a directed graph."""
 
     def __init__(self):
         super(BayesNet, self).__init__()
-        self.vs = {}  # The variables in the graph.
-        self.cpts = {}  # The conditional probability tables.
+        self.vs = {}  # Variables of the network indexed by name.
 
     def add_variable(self, name, domain):
         """Add a variable node with the given name to the network.
@@ -41,10 +47,10 @@ class BayesNet(nx.DiGraph):
             Values the variable can take.
         """
         name = str(name)
-        variable = Variable(name, domain)
         if name in self.vs:
             raise RuntimeError("Variable '{0}' already defined".format(name))
-        self.vs[name] = variable
+        v = Variable(name, domain, None, None)
+        self.vs[name] = v
 
     def add_cpt(self, parents, variable, table):
         """Add a conditional probability table (CPT) to the network.
@@ -63,12 +69,31 @@ class BayesNet(nx.DiGraph):
 
               { (vp_1, vp_2, ... , v_v): p, ...}
 
-            In the above,  p is the conditional probability of v having value
+            In the above, p is the conditional probability of v having value
             v_v, given that its parents have values vp_1, vp_2, etc.
         """
-        self.cpts[variable] = defaultdict(float, table)
         if parents is None:
-            parents = []
+            parents = ()
+        elif type(parents) == type(''):
+            parents = (parents,)
+        else:
+            parents = tuple(parents)
+        for v in list(parents) + [variable]:
+            if v not in self.vs:
+                raise RuntimeError("Unknown variable '{0}'".format(v))
+        # For CPTs with no parents, accept integers as table keys for user
+        # convenience, but convert them to single-element tuples here.
+        newtable = {}
+        for c, v in table.iteritems():
+            if type(c) == type(0):
+                newtable[(c,)] = v
+            else:
+                newtable[tuple(c)] = v
+        table = defaultdict(lambda: 0.5, newtable)
+        if not is_valid_cpt(table):
+            raise RuntimeError('Invalid CPT')
+        self.vs[variable].parents = parents
+        self.vs[variable].cpt = table
         for parent in parents:
             if not self.has_edge(parent, variable):
                 self.add_edge(parent, variable)
@@ -174,14 +199,17 @@ class BayesNet(nx.DiGraph):
             The variables on which we condition.
 
         dependent : iterable of str
-            The variables which are dependent of ``x`` given ``observed``.
+            The variables which are dependent on ``x`` given ``observed``.
         """
         pos = nx.spectral_layout(self)
         nx.draw_networkx_edges(self, pos,
                                edge_color=EDGE_COLOR,
                                width=EDGE_WIDTH)
-        rest = list(
-            set(self.nodes()) - set([x]) - set(observed) - set(dependent))
+        if x or observed or dependent:
+            rest = list(
+                set(self.nodes()) - set([x]) - set(observed) - set(dependent))
+        else:
+            rest = self.nodes()
         if rest:
             obj = nx.draw_networkx_nodes(self, pos, nodelist=rest,
                                          node_size=NODE_SIZE,

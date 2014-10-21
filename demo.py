@@ -1,11 +1,27 @@
 import matplotlib.pyplot as plt
-import examples_dsep
+import bprop
+import examples_bprop
 
 
-g = examples_dsep.bn_earthquake()
-g.get_reachable('Radio', plot=True)
+bn = examples_bprop.bn_earthquake()
+bn.draw()
 plt.show()
-g.get_reachable('Radio', ['Phone'], plot=True)
+
+g = bprop.FactorGraph(bn)
+g.draw()
 plt.show()
-g.get_reachable('Radio', ['Phone', 'Earthquake'], plot=True)
+marg = g.run_bp(10)
+bprop.draw_marginals(marg)
+plt.show()
+
+g = bprop.FactorGraph(bn)
+g.condition({'Phone': 1})
+marg = g.run_bp(10)
+bprop.draw_marginals(marg)
+plt.show()
+
+g = bprop.FactorGraph(bn)
+g.condition({'Phone': 1, 'Radio': 1})
+marg = g.run_bp(10)
+bprop.draw_marginals(marg)
 plt.show()

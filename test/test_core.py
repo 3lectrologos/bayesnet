@@ -3,11 +3,45 @@ from .. import core
 from ..examples_dsep import *
 
 
+class TestMisc(unittest2.TestCase):
+    def test_check_cpt_valid_1(self):
+        table = {(0, 0, 0): 0.999,
+                 (0, 0, 1): 0.001,
+                 (1, 0, 0): 0.00999,
+                 (1, 0, 1): 0.99001,
+                 (0, 1, 0): 0.98901,
+                 (0, 1, 1): 0.01099,
+                 (1, 1, 0): 0.0098901,
+                 (1, 1, 1): 0.9901099}
+        self.assertTrue(core.is_valid_cpt(table))
+
+    def test_check_cpt_valid_2(self):
+        table = {(0,): 1,
+                 (1,): 0}
+        self.assertTrue(core.is_valid_cpt(table))
+
+    def test_check_cpt_invalid_1(self):
+        table = {(0, 0, 0): 0.999,
+                 (0, 0, 1): 0.001,
+                 (1, 0, 0): 0.00999,
+                 (1, 0, 1): 0.99001,
+                 (0, 1, 0): 0.98901,
+                 (0, 1, 1): 0.01099,
+                 (1, 1, 0): 0.0098901,
+                 (1, 1, 1): 0.99}
+        self.assertFalse(core.is_valid_cpt(table))
+
+    def test_check_cpt_invalid_2(self):
+        table = {(0,): 0.5,
+                 (1,): 0.4}
+        self.assertFalse(core.is_valid_cpt(table))
+
+
 class TestBayesNet(unittest2.TestCase):
-    def check_double_variable(self):
+    def test_double_variable(self):
         g = core.BayesNet()
-        g.add_variable('X', (0, 1))
         self.assertRaises(RuntimeError, g.add_variable('X', (0, 1)))
+
 
 class TestDSeparation(unittest2.TestCase):
     def check_anc(self, g, z, correct):
