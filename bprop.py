@@ -67,7 +67,7 @@ class FactorGraph:
         if unknown_vars != set():
             raise RuntimeError("Unknown variable '{0}'".format(
                 unknown_vars.pop()))
-        fnode = FactorNode(variables, table)
+        fnode = FactorNode(self, variables, table)
         self.fs.add(fnode)
         for v in variables:
             vnode = self.vs[v]
@@ -119,13 +119,17 @@ class FactorGraph:
                 f.send()
             for v in self.vs:
                 marg[v] = np.vstack((marg[v], self.get_marginal(v)))
-        domains = {v.name: v.domain for v in self.vs.values()}
+        domains = {v.name: v.orig_domain for v in self.vs.values()}
         return (marg, domains, self.vobs)
 
     def condition(self, obs):
+        unknown_vars = set(obs.keys()) - set(self.vs.keys())
+        if unknown_vars != set():
+            raise RuntimeError("Unknown variable '{0}'".format(
+                 unknown_vars.pop()))
         self.vobs = obs
         for name, value in obs.iteritems():
-            table = {(d,): 0 for d in self.vs[name].domain}
+            table = {(d,): 0 for d in self.vs[name].orig_domain}
             table[(value,)] = 1
             # Check if there is an existing factor that is only connected
             # to the observed variable. If that is the case, replace its
@@ -162,7 +166,11 @@ class VariableNode(Node):
     def __init__(self, name, domain):
         super(VariableNode, self).__init__()
         self.name = name
-        self.domain = domain
+        # Map domain to nonnegative integers and store original domain, as well
+        # as a domain map: original -> new.
+        self.domain = range(len(domain))
+        self.orig_domain = domain
+        self.orig2new = dict(zip(domain, self.domain))
 
     def init_received(self):
         self.received = {fnode: np.zeros(len(self.domain))
@@ -183,10 +191,15 @@ class VariableNode(Node):
 
 
 class FactorNode(Node):
-    def __init__(self, variables, table):
+    def __init__(self, graph, variables, table):
         super(FactorNode, self).__init__()
         self.variables = variables
-        self.table = table.copy()
+        # Map table combinations to numerical values.
+        self.table = {}
+        for comb, fvalue in table.iteritems():
+            newcomb = tuple(graph.vs[v].orig2new[orig]
+                            for v, orig in zip(variables, comb))
+            self.table[newcomb] = fvalue
         self.name = 'F_' + reduce(lambda x, y: x + y,
                                   [v for v in variables],
                                   '')
@@ -195,7 +208,6 @@ class FactorNode(Node):
             if v == 0:
                 self.table[k] = -1e6
             else:
-                print v
                 self.table[k] = np.log(v)
 
     def init_received(self):

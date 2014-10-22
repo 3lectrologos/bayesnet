@@ -25,6 +25,39 @@ def bn_vstruct():
     return g
 
 
+# The Naive Bayes network from Problem Set 2, Exercise 2.
+def bn_naive_bayes():
+    g = core.BayesNet()
+    g.add_variable('Coin', ('a', 'b', 'c'))
+    g.add_variable('X1', ('H', 'T'))
+    g.add_variable('X2', ('H', 'T'))
+    g.add_variable('X3', ('H', 'T'))
+    g.add_cpt(None, 'Coin', {'a': 1.0/3, 'b': 1.0/3, 'c': 1.0/3})
+    g.add_cpt('Coin', 'X1',
+              {('a', 'H'): 0.2,
+               ('a', 'T'): 0.8,
+               ('b', 'H'): 0.6,
+               ('b', 'T'): 0.4,
+               ('c', 'H'): 0.8,
+               ('c', 'T'): 0.2})
+    g.add_cpt('Coin', 'X2',
+              {('a', 'H'): 0.2,
+               ('a', 'T'): 0.8,
+               ('b', 'H'): 0.6,
+               ('b', 'T'): 0.4,
+               ('c', 'H'): 0.8,
+               ('c', 'T'): 0.2})
+    g.add_cpt('Coin', 'X3',
+              {('a', 'H'): 0.2,
+               ('a', 'T'): 0.8,
+               ('b', 'H'): 0.6,
+               ('b', 'T'): 0.4,
+               ('c', 'H'): 0.8,
+               ('c', 'T'): 0.2})
+    return g
+
+
+# The earthquake network from Problem Set 3.
 def bn_earthquake():
     g = core.BayesNet()
     g.add_variable('Earthquake', (0, 1))
@@ -50,32 +83,11 @@ def bn_earthquake():
     g.add_cpt('Alarm', 'Phone',
               {(0, 1): 0,
                (0, 0): 1,
-               (1, 0): 0.5,
-               (1, 1): 0.5})
+               (1, 0): 0.3,
+               (1, 1): 0.7})
     g.add_cpt('Earthquake', 'Radio',
               {(0, 1): 0,
                (0, 0): 1,
-               (1, 0): 0.2,
-               (1, 1): 0.8})
-    return g
-
-
-def bn_two_nodes_three_values():
-    g = core.BayesNet()
-    g.add_variable('X', (0, 1, 2))
-    g.add_variable('Y', (0, 1, 2))
-    g.add_cpt(None, 'X',
-              {0: 0.4,
-               1: 0.5,
-               2: 0.1})
-    g.add_cpt('X', 'Y',
-              {(0, 0): 0.55,
-               (0, 1): 0.25,
-               (0, 2): 0.2,
-               (1, 0): 0.6,
-               (1, 1): 0.3,
-               (1, 2): 0.1,
-               (2, 0): 0.05,
-               (2, 1): 0.9,
-               (2, 2): 0.05})
+               (1, 0): 0.1,
+               (1, 1): 0.9})
     return g
