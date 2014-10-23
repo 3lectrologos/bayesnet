@@ -9,8 +9,9 @@ from conf import *
 class FactorGraph:
     """An (undirected bipartite) factor graph with variable and factor nodes."""
 
-    """Create a new factor graph or convert BayesNet ``bn`` to one, if given."""
     def __init__(self, bn=None):
+        """Create a new factor graph or convert BayesNet ``bn`` to one, if
+        given."""
         self.vs = {}
         self.fs = set()
         self.vobs = {}
