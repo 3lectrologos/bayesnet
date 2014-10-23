@@ -12,7 +12,7 @@ def is_valid_cpt(table):
     in the tuples, while all other variables are conditioned on.
     """
     probabilities = defaultdict(float)
-    for combination, value in table.iteritems():
+    for combination, value in table.items():
         if value < 0 or value > 1:
             return False
         probabilities[combination[:-1]] += value
@@ -84,7 +84,7 @@ class BayesNet(nx.DiGraph):
         # For CPTs with no parents, accept integers as table keys for user
         # convenience, but convert them to single-element tuples here.
         newtable = {}
-        for c, v in table.iteritems():
+        for c, v in table.items():
             if type(c) == type(0):
                 newtable[(c,)] = v
             else:

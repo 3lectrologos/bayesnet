@@ -1,8 +1,8 @@
+from functools import reduce
 import math
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
-import core
 from conf import *
 
 
@@ -128,7 +128,7 @@ class FactorGraph:
             raise RuntimeError("Unknown variable '{0}'".format(
                  unknown_vars.pop()))
         self.vobs = obs
-        for name, value in obs.iteritems():
+        for name, value in obs.items():
             table = {(d,): 0 for d in self.vs[name].orig_domain}
             table[(value,)] = 1
             # Check if there is an existing factor that is only connected
@@ -143,7 +143,7 @@ class FactorGraph:
                 fnode = self.add_factor((name,), table)
 
     def get_marginal(self, var):
-        return self.vs[var].marginal()        
+        return self.vs[var].marginal()
 
 
 class Node(object):
@@ -196,7 +196,7 @@ class FactorNode(Node):
         self.variables = variables
         # Map table combinations to numerical values.
         self.table = {}
-        for comb, fvalue in table.iteritems():
+        for comb, fvalue in table.items():
             newcomb = tuple(graph.vs[v].orig2new[orig]
                             for v, orig in zip(variables, comb))
             self.table[newcomb] = fvalue
@@ -204,7 +204,7 @@ class FactorNode(Node):
                                   [v for v in variables],
                                   '')
         # Just to avoid annoying numpy warnings for log(0).
-        for k, v in self.table.iteritems():
+        for k, v in self.table.items():
             if v == 0:
                 self.table[k] = -1e6
             else:
@@ -218,7 +218,7 @@ class FactorNode(Node):
         # factor table tuples.
         target_index = self.neighbors.index(target)
         msg = -np.Inf*np.ones(len(target.domain))
-        for comb, fvalue in self.table.iteritems():
+        for comb, fvalue in self.table.items():
             s = 0
             for i, vnode in enumerate(self.neighbors):
                 if vnode != target:
@@ -236,7 +236,6 @@ def normalize(logdist):
 def draw_marginals(marg):
     marg, doms, obs = marg
     n = len(marg)
-    t = len(marg.itervalues().next())
     rows = int(math.ceil(n/2.0))
     marg = sorted(marg.items())
     for i, (name, values) in enumerate(marg):
