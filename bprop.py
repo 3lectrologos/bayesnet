@@ -60,9 +60,7 @@ class FactorNode(Node):
             newcomb = tuple(graph.vs[v].orig2new[orig]
                             for v, orig in zip(variables, comb))
             self.table[newcomb] = fvalue
-        self.name = 'F_' + reduce(lambda x, y: x + y,
-                                  [v for v in variables],
-                                  '')
+        self.name = 'F_' + ''.join(variables)
         # Just to avoid annoying numpy warnings for log(0).
         for k, v in self.table.items():
             if v == 0:
