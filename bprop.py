@@ -39,17 +39,13 @@ class VariableNode(Node):
     def send_one(self, target):
         """Send a message to the target factor."""
         msg = np.zeros(len(self.domain))
-        for fnode in self.neighbors:
-            if fnode != target:
-                msg += self.received[fnode]
+        # TODO
         target.receive(self, normalize(msg))
 
     def marginal(self):
         """Compute the marginals from the incoming messages."""
-        m = np.zeros(len(self.domain))
-        for fnode in self.neighbors:
-            m += self.received[fnode]
-        return np.exp(normalize(m))
+        # TODO. The function normalize can be useful here.
+        return 0.5*np.ones(len(self.domain))
 
 
 class FactorNode(Node):
@@ -92,12 +88,7 @@ class FactorNode(Node):
         target_index = self.neighbors.index(target)
         msg = -np.Inf*np.ones(len(target.domain))
         for comb, fvalue in self.table.items():
-            s = 0
-            for i, vnode in enumerate(self.neighbors):
-                if vnode != target:
-                    s += self.received[vnode][comb[i]]
-            s += fvalue
-            msg[comb[target_index]] = np.logaddexp(msg[comb[target_index]], s)
+            pass  # TODO. You can use np.logaddexp for numerical stability.
         target.receive(self, msg)
 
 
