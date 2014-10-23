@@ -37,6 +37,7 @@ class VariableNode(Node):
                          for fnode in self.neighbors}
 
     def send_one(self, target):
+        """Send a message to the target factor."""
         msg = np.zeros(len(self.domain))
         for fnode in self.neighbors:
             if fnode != target:
@@ -44,6 +45,7 @@ class VariableNode(Node):
         target.receive(self, normalize(msg))
 
     def marginal(self):
+        """Compute the marginals from the incoming messages."""
         m = np.zeros(len(self.domain))
         for fnode in self.neighbors:
             m += self.received[fnode]
@@ -52,6 +54,18 @@ class VariableNode(Node):
 
 class FactorNode(Node):
     def __init__(self, graph, variables, table):
+        """
+        Arguments
+        ----------
+        graph : FactorGraph
+
+        variables : iterable
+            The variables that are in this factor. The order matters.
+
+        table : map
+            Maps every tuple of possible values (v_1, ..., v_n) the variables
+            in this factor can take to the value of the factor.
+        """
         super(FactorNode, self).__init__()
         self.variables = variables
         # Map table combinations to numerical values.
@@ -72,6 +86,7 @@ class FactorNode(Node):
         self.received = {}
 
     def send_one(self, target):
+        """Send a message to the target variable."""
         # NOTE: Variable nodes in self.neighbors are in same order as in the
         # factor table tuples.
         target_index = self.neighbors.index(target)
@@ -203,13 +218,16 @@ class FactorGraph:
         domains = {v.name: v.orig_domain for v in self.vs.values()}
         return (marg, domains, self.vobs)
 
-    def condition(self, obs):
-        unknown_vars = set(obs.keys()) - set(self.vs.keys())
+    def condition(self, observations):
+        """Condition on the given observations. More precisely, for every
+        ``(variable, value)`` pair in the provided dictionary ``observations``,
+        the condition that ``variable`` is equal to ``value`` is *added*."""
+        unknown_vars = set(observations.keys()) - set(self.vs.keys())
         if unknown_vars != set():
             raise RuntimeError("Unknown variable '{0}'".format(
                 unknown_vars.pop()))
-        self.vobs = obs
-        for name, value in obs.items():
+        self.vobs.update(observations)
+        for name, value in observations.items():
             table = {(d,): 0 for d in self.vs[name].orig_domain}
             table[(value,)] = 1
             # Check if there is an existing factor that is only connected
@@ -224,10 +242,14 @@ class FactorGraph:
                 fnode = self.add_factor((name,), table)
 
     def get_marginal(self, var):
+        """Get the marginals for the given variable."""
         return self.vs[var].marginal()
 
 
 def normalize(logdist):
+    """Computes the following in a numerically stable way:
+
+            logdist - log\sum_i\exp(logdist_i)."""
     Z = reduce(np.logaddexp, logdist, -np.Inf)
     return logdist - Z
 
