@@ -24,6 +24,15 @@ class Node(object):
 
 class VariableNode(Node):
     def __init__(self, name, domain):
+        """
+        Arguments
+        ----------
+        name: str
+            Variable name.
+
+        domain: iterable
+            The values the variable can take.
+        """
         super(VariableNode, self).__init__()
         self.name = name
         # Map domain to nonnegative integers and store original domain, as well
@@ -33,11 +42,21 @@ class VariableNode(Node):
         self.orig2new = dict(zip(domain, self.domain))
 
     def init_received(self):
+        """
+        Initially, "hallucinate" received messages of all ones (zeros in the
+        log domain) to start the message passing algorithm.
+        """
         self.received = {fnode: np.zeros(len(self.domain))
                          for fnode in self.neighbors}
 
     def send_one(self, target):
-        """Send a message to the target factor."""
+        """Send a message to the target factor.
+
+        Arguments
+        ---------
+        target: str
+            The target factor, which should be a neighbor in the factor graph.
+        """
         msg = np.zeros(len(self.domain))
         for fnode in self.neighbors:
             if fnode != target:
@@ -45,7 +64,7 @@ class VariableNode(Node):
         target.receive(self, normalize(msg))
 
     def marginal(self):
-        """Compute the marginals from the incoming messages."""
+        """Compute the marginal probability distribution of this variable."""
         m = np.zeros(len(self.domain))
         for fnode in self.neighbors:
             m += self.received[fnode]
@@ -86,7 +105,13 @@ class FactorNode(Node):
         self.received = {}
 
     def send_one(self, target):
-        """Send a message to the target variable."""
+        """Send a message to the target variable.
+
+        Arguments
+        ---------
+        target: str
+            The target variable, which should be a neighbor in the factor graph.
+        """
         # NOTE: Variable nodes in self.neighbors are in same order as in the
         # factor table tuples.
         target_index = self.neighbors.index(target)
@@ -172,7 +197,7 @@ class FactorGraph:
         return fnode
 
     def to_networkx(self):
-        """Convert the factor graph to a networkx graph."""
+        """Convert the factor graph to an undirected networkx graph."""
         g = nx.Graph()
         for v in self.vs.values():
             g.add_node(v)
@@ -203,6 +228,24 @@ class FactorGraph:
                                 font_color=LABEL_COLOR)
 
     def run_bp(self, niter):
+        """Run belief propagation for a number of iterations.
+        
+        The algorithm alternates between sending messages from each variable
+        node its neighboring factor nodes and from each factor node to its
+        neighboring variable nodes. One iteration is completed when every
+        variable and factor node has send all its messages.
+
+        Arguments
+        ---------
+        niter: int
+            The number of iterations.
+
+        Returns
+        -------
+        A tuple containing (1) the marginal distribution of each variable at
+        each iteration, (2) the domain of each variable, and (3) the dictionary
+        of observed variables and their values.
+        """
         for v in self.vs.values():
             v.init_received()
         for f in self.fs:
@@ -219,9 +262,18 @@ class FactorGraph:
         return (marg, domains, self.vobs)
 
     def condition(self, observations):
-        """Condition on the given observations. More precisely, for every
-        ``(variable, value)`` pair in the provided dictionary ``observations``,
-        the condition that ``variable`` is equal to ``value`` is *added*."""
+        """Condition on the given observations.
+
+        More precisely, for every ``(variable, value)`` pair in the provided
+        dictionary ``observations``, the condition that ``variable`` is equal
+        to ``value`` is *added* to the existing observations in the factor
+        graph (if any).
+
+        Arguments
+        ---------
+        observations: dict of variable -> value
+            The observed values for one or more variables in the factor graph.
+        """
         unknown_vars = set(observations.keys()) - set(self.vs.keys())
         if unknown_vars != set():
             raise RuntimeError("Unknown variable '{0}'".format(
@@ -242,19 +294,47 @@ class FactorGraph:
                 fnode = self.add_factor((name,), table)
 
     def get_marginal(self, var):
-        """Get the marginals for the given variable."""
+        """Get the marginal probability distribution of variable ``var``.
+
+        Arguments
+        ---------
+        var: str
+            The name of the variable.
+
+        Returns
+        -------
+        A numpy array representing the marginal distribution.
+        """
         return self.vs[var].marginal()
 
 
 def normalize(logdist):
-    """Computes the following in a numerically stable way:
+    """Compute the following in a numerically stable way:
 
-            logdist - log\sum_i\exp(logdist_i)."""
+            logdist - log\sum_i\exp(logdist_i).
+    
+    Arguments
+    ---------
+    logdist: iterable of float
+        An unnormalized distribution in the logarithmic domain.
+
+    Returns
+    -------
+    The normalized version of logdist again in the logarithmic domain.
+    """
     Z = reduce(np.logaddexp, logdist, -np.Inf)
     return logdist - Z
 
 
 def draw_marginals(marg):
+    """Draw the marginal distribution of each variable for each BP iteration.
+    
+    Arguments
+    ---------
+    marg: tuple
+        A tuple of belief propagation results as return by
+        ``FactorGraph.run_bp``.
+    """
     marg, doms, obs = marg
     n = len(marg)
     rows = int(math.ceil(n/2.0))
