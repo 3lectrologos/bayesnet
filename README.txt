@@ -1,7 +1,7 @@
-PAI: Homework 4 --- Belief propagation in factor graphs
+PAI: Homework 4 --- Belief propagation on factor graphs
 =======================================================
 
-In this homework you have to implement Belief propagation for factor graphs.
+In this homework you have to implement Belief propagation on factor graphs.
 
 Dependencies
 ------------
