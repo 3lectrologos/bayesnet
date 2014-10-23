@@ -6,6 +6,88 @@ import matplotlib.pyplot as plt
 from conf import *
 
 
+class Node(object):
+    def __init__(self):
+        self.neighbors = []
+        self.received = {}
+
+    def connect_to(self, node):
+        self.neighbors.append(node)
+
+    def send(self):
+        for fnode in self.neighbors:
+            self.send_one(fnode)
+
+    def receive(self, source, msg):
+        self.received[source] = msg
+
+
+class VariableNode(Node):
+    def __init__(self, name, domain):
+        super(VariableNode, self).__init__()
+        self.name = name
+        # Map domain to nonnegative integers and store original domain, as well
+        # as a domain map: original -> new.
+        self.domain = range(len(domain))
+        self.orig_domain = domain
+        self.orig2new = dict(zip(domain, self.domain))
+
+    def init_received(self):
+        self.received = {fnode: np.zeros(len(self.domain))
+                         for fnode in self.neighbors}
+
+    def send_one(self, target):
+        msg = np.zeros(len(self.domain))
+        for fnode in self.neighbors:
+            if fnode != target:
+                msg += self.received[fnode]
+        target.receive(self, normalize(msg))
+
+    def marginal(self):
+        m = np.zeros(len(self.domain))
+        for fnode in self.neighbors:
+            m += self.received[fnode]
+        return np.exp(normalize(m))
+
+
+class FactorNode(Node):
+    def __init__(self, graph, variables, table):
+        super(FactorNode, self).__init__()
+        self.variables = variables
+        # Map table combinations to numerical values.
+        self.table = {}
+        for comb, fvalue in table.items():
+            newcomb = tuple(graph.vs[v].orig2new[orig]
+                            for v, orig in zip(variables, comb))
+            self.table[newcomb] = fvalue
+        self.name = 'F_' + reduce(lambda x, y: x + y,
+                                  [v for v in variables],
+                                  '')
+        # Just to avoid annoying numpy warnings for log(0).
+        for k, v in self.table.items():
+            if v == 0:
+                self.table[k] = -1e6
+            else:
+                self.table[k] = np.log(v)
+
+    def init_received(self):
+        self.received = {}
+
+    def send_one(self, target):
+        # NOTE: Variable nodes in self.neighbors are in same order as in the
+        # factor table tuples.
+        target_index = self.neighbors.index(target)
+        msg = -np.Inf*np.ones(len(target.domain))
+        for comb, fvalue in self.table.items():
+            s = 0
+            for i, vnode in enumerate(self.neighbors):
+                if vnode != target:
+                    s += self.received[vnode][comb[i]]
+            s += fvalue
+            msg[comb[target_index]] = np.logaddexp(msg[comb[target_index]], s)
+        target.receive(self, msg)
+
+
 class FactorGraph:
     """An (undirected bipartite) factor graph with variable and factor nodes."""
 
@@ -127,7 +209,7 @@ class FactorGraph:
         unknown_vars = set(obs.keys()) - set(self.vs.keys())
         if unknown_vars != set():
             raise RuntimeError("Unknown variable '{0}'".format(
-                 unknown_vars.pop()))
+                unknown_vars.pop()))
         self.vobs = obs
         for name, value in obs.items():
             table = {(d,): 0 for d in self.vs[name].orig_domain}
@@ -145,88 +227,6 @@ class FactorGraph:
 
     def get_marginal(self, var):
         return self.vs[var].marginal()
-
-
-class Node(object):
-    def __init__(self):
-        self.neighbors = []
-        self.received = {}
-
-    def connect_to(self, node):
-        self.neighbors.append(node)
-
-    def send(self):
-        for fnode in self.neighbors:
-            self.send_one(fnode)
-
-    def receive(self, source, msg):
-        self.received[source] = msg
-
-
-class VariableNode(Node):
-    def __init__(self, name, domain):
-        super(VariableNode, self).__init__()
-        self.name = name
-        # Map domain to nonnegative integers and store original domain, as well
-        # as a domain map: original -> new.
-        self.domain = range(len(domain))
-        self.orig_domain = domain
-        self.orig2new = dict(zip(domain, self.domain))
-
-    def init_received(self):
-        self.received = {fnode: np.zeros(len(self.domain))
-                         for fnode in self.neighbors}
-
-    def send_one(self, target):
-        msg = np.zeros(len(self.domain))
-        for fnode in self.neighbors:
-            if fnode != target:
-                msg += self.received[fnode]
-        target.receive(self, normalize(msg))
-
-    def marginal(self):
-        m = np.zeros(len(self.domain))
-        for fnode in self.neighbors:
-            m += self.received[fnode]
-        return np.exp(normalize(m))
-
-
-class FactorNode(Node):
-    def __init__(self, graph, variables, table):
-        super(FactorNode, self).__init__()
-        self.variables = variables
-        # Map table combinations to numerical values.
-        self.table = {}
-        for comb, fvalue in table.items():
-            newcomb = tuple(graph.vs[v].orig2new[orig]
-                            for v, orig in zip(variables, comb))
-            self.table[newcomb] = fvalue
-        self.name = 'F_' + reduce(lambda x, y: x + y,
-                                  [v for v in variables],
-                                  '')
-        # Just to avoid annoying numpy warnings for log(0).
-        for k, v in self.table.items():
-            if v == 0:
-                self.table[k] = -1e6
-            else:
-                self.table[k] = np.log(v)
-
-    def init_received(self):
-        self.received = {}
-                
-    def send_one(self, target):
-        # NOTE: Variable nodes in self.neighbors are in same order as in the
-        # factor table tuples.
-        target_index = self.neighbors.index(target)
-        msg = -np.Inf*np.ones(len(target.domain))
-        for comb, fvalue in self.table.items():
-            s = 0
-            for i, vnode in enumerate(self.neighbors):
-                if vnode != target:
-                    s += self.received[vnode][comb[i]]
-            s += fvalue
-            msg[comb[target_index]] = np.logaddexp(msg[comb[target_index]], s)
-        target.receive(self, msg)
 
 
 def normalize(logdist):
