@@ -1,7 +1,7 @@
 import core
-import bprop
 
 
+# A simple v-structure network.
 def bn_vstruct():
     g = core.BayesNet()
     g.add_variable('X', (0, 1))
@@ -32,7 +32,7 @@ def bn_naive_bayes():
     g.add_variable('X1', ('H', 'T'))
     g.add_variable('X2', ('H', 'T'))
     g.add_variable('X3', ('H', 'T'))
-    g.add_cpt(None, 'Coin', {'a': 1.0/3, 'b': 1.0/3, 'c': 1.0/3})
+    g.add_cpt(None, 'Coin', {'a': 1.0 / 3, 'b': 1.0 / 3, 'c': 1.0 / 3})
     g.add_cpt('Coin', 'X1',
               {('a', 'H'): 0.2,
                ('a', 'T'): 0.8,
@@ -54,40 +54,4 @@ def bn_naive_bayes():
                ('b', 'T'): 0.4,
                ('c', 'H'): 0.8,
                ('c', 'T'): 0.2})
-    return g
-
-
-# The earthquake network from Problem Set 3.
-def bn_earthquake():
-    g = core.BayesNet()
-    g.add_variable('Earthquake', (0, 1))
-    g.add_variable('Burglar', (0, 1))
-    g.add_variable('Radio', (0, 1))
-    g.add_variable('Alarm', (0, 1))
-    g.add_variable('Phone', (0, 1))
-    g.add_cpt(None, 'Earthquake',
-              {0: 0.999,
-               1: 0.001})
-    g.add_cpt(None, 'Burglar',
-              {0: 0.999,
-               1: 0.001})
-    g.add_cpt(('Burglar', 'Earthquake'), 'Alarm',
-              {(0, 0, 0): 0.999,
-               (0, 0, 1): 0.001,
-               (1, 0, 0): 0.00999,
-               (1, 0, 1): 0.99001,
-               (0, 1, 0): 0.98901,
-               (0, 1, 1): 0.01099,
-               (1, 1, 0): 0.0098901,
-               (1, 1, 1): 0.9901099})
-    g.add_cpt('Alarm', 'Phone',
-              {(0, 1): 0,
-               (0, 0): 1,
-               (1, 0): 0.3,
-               (1, 1): 0.7})
-    g.add_cpt('Earthquake', 'Radio',
-              {(0, 1): 0,
-               (0, 0): 1,
-               (1, 0): 0.1,
-               (1, 1): 0.9})
     return g

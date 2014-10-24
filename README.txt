@@ -1,7 +1,8 @@
-PAI: Homework 4 --- Belief propagation on factor graphs
-=======================================================
+PAI: Homework 4 --- Belief propagation in Bayesian networks
+===========================================================
 
-In this homework you have to implement Belief propagation on factor graphs.
+In this homework you have to implement belief propagation in Bayesian networks,
+after converting them to factor graphs.
 
 Dependencies
 ------------
@@ -19,9 +20,10 @@ You can install the dependencies with your package manager, or you can use pip:
 Task
 ----
 
-Implement the missing parts in prop.py file (the ones with # TODO comments)
+Implement the missing parts in bprop.py (the ones with # TODO comments).
 Then, you can run 
 
     python demo.py
 
-to see if you get correct results on two networks from homeworks 2 and 3.
+to see if you get correct results on the coin flipping network from exercise 2
+of Problem Set 2.

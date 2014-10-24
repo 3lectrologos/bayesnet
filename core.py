@@ -5,6 +5,7 @@ from conf import *
 
 EPS = 1e-10
 
+
 def is_valid_cpt(table):
     """Check that ``table`` contains valid conditional prob. distributions.
 
@@ -74,21 +75,21 @@ class BayesNet(nx.DiGraph):
         """
         if parents is None:
             parents = ()
-        elif type(parents) == type(''):
+        elif isinstance(parents, str):
             parents = (parents,)
         else:
             parents = tuple(parents)
         for v in list(parents) + [variable]:
             if v not in self.vs:
                 raise RuntimeError("Unknown variable '{0}'".format(v))
-        # For CPTs with no parents, accept integers as table keys for user
+        # For CPTs with no parents, accept non-iterables as table keys for user
         # convenience, but convert them to single-element tuples here.
         newtable = {}
         for c, v in table.items():
-            if type(c) == type(0):
-                newtable[(c,)] = v
-            else:
+            try:
                 newtable[tuple(c)] = v
+            except:
+                newtable[(c,)] = v
         table = defaultdict(lambda: 0.5, newtable)
         if not is_valid_cpt(table):
             raise RuntimeError('Invalid CPT')
@@ -97,95 +98,6 @@ class BayesNet(nx.DiGraph):
         for parent in parents:
             if not self.has_edge(parent, variable):
                 self.add_edge(parent, variable)
-
-    def get_ancestors(self, variables):
-        """Get all ancestors of the given variables.
-
-        Arguments
-        ---------
-        variables : iterable of str
-
-        Returns
-        -------
-        A set with the ancestors.
-        """
-        to_visit = set(variables)
-        ancestors = set()
-        while to_visit:
-            variable = to_visit.pop()
-            if variable not in ancestors:
-                ancestors.add(variable)
-                to_visit |= set(self.predecessors(variable))
-        return ancestors
-
-    def get_reachable(self, x, observed=None, plot=False):
-        """Get all nodes that are reachable from x, given the observed nodes.
-
-        Arguments
-        ---------
-        x : str
-            Source node.
-
-        observed : iterable of str
-            A set of observed variables. Defaults to None (no observations)
-
-        plot : bool
-            If True, plot network with distinguishing colors for observable,
-            reachable, and d-separated nodes.
-
-        Returns
-        -------
-        The set of reachable nodes.
-        """
-        if observed is None:
-            observed = []
-        observed = set(observed)
-        assert x in self.nodes()
-        assert observed <= set(self.nodes())
-        # First, find all ancestors of observed set.
-        ancestors = self.get_ancestors(observed)
-        # Then, perform breadth-first search starting from x. Nodes to be
-        # visited are stored as tuples with the following elements:
-        #         * the variable
-        #         * True, if the variable was reached from an incoming edge,
-        #           False, if it was reached from an outgoing edge.
-        # Any variable that is reached through an active path is stored in
-        # reachable.
-        to_visit = set([(x, False)])
-        visited = set()
-        reachable = set()
-        while to_visit != set():
-            current = to_visit.pop()
-            variable, trail_entering = current
-            if current in visited:
-                continue
-            if variable not in observed:
-                reachable.add(variable)
-            visited.add(current)
-            # <--- V
-            if not trail_entering and variable not in observed:
-                # <--- V <---
-                for predecessor in self.predecessors_iter(variable):
-                    to_visit.add((predecessor, False))
-                # <--- V --->
-                for successor in self.successors_iter(variable):
-                    to_visit.add((successor, True))
-            # ---> V
-            elif trail_entering:
-                # ---> V --->
-                if variable not in observed:  # only successors blocked.
-                    for successor in self.successors_iter(variable):
-                        to_visit.add((successor, True))
-                # ---> V <---
-                elif variable in ancestors:
-                    for predecessor in self.predecessors_iter(variable):
-                        to_visit.add((predecessor, False))
-        # Just a convention to not return the query node.
-        reachable.discard(x)
-        # Optionally plot.
-        if plot:
-            self.draw(x, observed, reachable)
-        return reachable
 
     def draw(self, x=None, observed=None, dependent=None):
         """Draw the Bayesian network.
