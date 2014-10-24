@@ -110,12 +110,13 @@ class FactorNode(Node):
         Arguments
         ---------
         target: str
-            The target variable, which should be a neighbor in the factor graph.
+            The target variable, which should be a neighbor in the factor
+            graph.
         """
         # NOTE: Variable nodes in self.neighbors are in same order as in the
         # factor table tuples.
         target_index = self.neighbors.index(target)
-        msg = -np.Inf*np.ones(len(target.domain))
+        msg = -np.Inf * np.ones(len(target.domain))
         for comb, fvalue in self.table.items():
             s = 0
             for i, vnode in enumerate(self.neighbors):
@@ -127,7 +128,7 @@ class FactorNode(Node):
 
 
 class FactorGraph:
-    """An (undirected bipartite) factor graph with variable and factor nodes."""
+    """A (undirected bipartite) factor graph with variable and factor nodes."""
 
     def __init__(self, bn=None):
         """Create a new factor graph or convert BayesNet ``bn`` to one, if
@@ -135,7 +136,7 @@ class FactorGraph:
         self.vs = {}
         self.fs = set()
         self.vobs = {}
-        if bn != None:
+        if bn is not None:
             for v in bn.vs.values():
                 self.add_variable(v.name, v.domain)
             for v in bn.vs.values():
@@ -229,7 +230,7 @@ class FactorGraph:
 
     def run_bp(self, niter):
         """Run belief propagation for a number of iterations.
-        
+
         The algorithm alternates between sending messages from each variable
         node its neighboring factor nodes and from each factor node to its
         neighboring variable nodes. One iteration is completed when every
@@ -312,7 +313,7 @@ def normalize(logdist):
     """Compute the following in a numerically stable way:
 
             logdist - log\sum_i\exp(logdist_i).
-    
+
     Arguments
     ---------
     logdist: iterable of float
@@ -328,7 +329,7 @@ def normalize(logdist):
 
 def draw_marginals(marg):
     """Draw the marginal distribution of each variable for each BP iteration.
-    
+
     Arguments
     ---------
     marg: tuple
@@ -337,13 +338,13 @@ def draw_marginals(marg):
     """
     marg, doms, obs = marg
     n = len(marg)
-    rows = int(math.ceil(n/2.0))
+    rows = int(math.ceil(n / 2.0))
     marg = sorted(marg.items())
     for i, (name, values) in enumerate(marg):
         if name in obs:
-            plt.subplot(rows, 2, i+1, axisbg=AXIS_OBSERVED_BG_COLOR)
+            plt.subplot(rows, 2, i + 1, axisbg=AXIS_OBSERVED_BG_COLOR)
         else:
-            plt.subplot(rows, 2, i+1)
+            plt.subplot(rows, 2, i + 1)
         obj = plt.plot(values, '-o', linewidth=2, antialiased=True)
         for o in plt.gcf().findobj():
             o.set_clip_on(False)

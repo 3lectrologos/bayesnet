@@ -5,6 +5,7 @@ from conf import *
 
 EPS = 1e-10
 
+
 def is_valid_cpt(table):
     """Check that ``table`` contains valid conditional prob. distributions.
 
@@ -74,21 +75,21 @@ class BayesNet(nx.DiGraph):
         """
         if parents is None:
             parents = ()
-        elif type(parents) == type(''):
+        elif isinstance(parents, str):
             parents = (parents,)
         else:
             parents = tuple(parents)
         for v in list(parents) + [variable]:
             if v not in self.vs:
                 raise RuntimeError("Unknown variable '{0}'".format(v))
-        # For CPTs with no parents, accept integers as table keys for user
+        # For CPTs with no parents, accept non-iterables as table keys for user
         # convenience, but convert them to single-element tuples here.
         newtable = {}
         for c, v in table.items():
-            if type(c) == type(0):
-                newtable[(c,)] = v
-            else:
+            try:
                 newtable[tuple(c)] = v
+            except TypeError:
+                newtable[(c,)] = v
         table = defaultdict(lambda: 0.5, newtable)
         if not is_valid_cpt(table):
             raise RuntimeError('Invalid CPT')

@@ -1,5 +1,4 @@
 import core
-import bprop
 
 
 def bn_vstruct():
@@ -32,7 +31,7 @@ def bn_naive_bayes():
     g.add_variable('X1', ('H', 'T'))
     g.add_variable('X2', ('H', 'T'))
     g.add_variable('X3', ('H', 'T'))
-    g.add_cpt(None, 'Coin', {'a': 1.0/3, 'b': 1.0/3, 'c': 1.0/3})
+    g.add_cpt(None, 'Coin', {'a': 1.0 / 3, 'b': 1.0 / 3, 'c': 1.0 / 3})
     g.add_cpt('Coin', 'X1',
               {('a', 'H'): 0.2,
                ('a', 'T'): 0.8,
