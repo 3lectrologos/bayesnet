@@ -145,11 +145,11 @@ class BayesNet(nx.DiGraph):
         assert observed <= set(self.nodes())
         # First, find all ancestors of observed set.
         ancestors = self.get_ancestors(observed)
-        # Then, perform breadth-first search starting from x. Nodes to be
-        # visited are stored as tuples with the following elements:
+        # Then, perform a search for reachable variables starting from x.
+        # Nodes to be visited are stored as tuples with the following elements:
         #         * the variable
-        #         * True, if the variable was reached from an incoming edge,
-        #           False, if it was reached from an outgoing edge.
+        #         * True, if the variable was reached via an incoming edge,
+        #           False, if it was reached via an outgoing edge.
         # Any variable that is reached through an active path is stored in
         # reachable.
         to_visit = set([(x, False)])
