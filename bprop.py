@@ -327,7 +327,7 @@ def normalize(logdist):
     return logdist - Z
 
 
-def draw_marginals(marg):
+def draw_marginals(marg, markers=True):
     """Draw the marginal distribution of each variable for each BP iteration.
 
     Arguments
@@ -335,6 +335,8 @@ def draw_marginals(marg):
     marg: tuple
         A tuple of belief propagation results as return by
         ``FactorGraph.run_bp``.
+    markers: boolean
+        If true markers are drawn on top of the plot lines.
     """
     marg, doms, obs = marg
     n = len(marg)
@@ -345,7 +347,10 @@ def draw_marginals(marg):
             plt.subplot(rows, 2, i + 1, axisbg=AXIS_OBSERVED_BG_COLOR)
         else:
             plt.subplot(rows, 2, i + 1)
-        obj = plt.plot(values, '-o', linewidth=2, antialiased=True)
+        if markers:
+            obj = plt.plot(values, '-o', linewidth=2, antialiased=True)
+        else:
+            obj = plt.plot(values, '-', linewidth=2, antialiased=True)
         for o in plt.gcf().findobj():
             o.set_clip_on(False)
         plt.ylim((0, 1))
