@@ -143,7 +143,7 @@ class GibbsSampler:
         Returns
         -------
         A dictionary that maps each variable v to a N x |domain(v)| array,
-        where the i-th column holds the estimated marginals after i samples.
+        where the i-th row holds the estimated marginals after i samples.
         """
         niter = len(samples.values()[0])
         assert niter >= 1
