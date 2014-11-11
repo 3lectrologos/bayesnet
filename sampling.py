@@ -3,40 +3,25 @@ import numpy.random as npr
 import bprop
 
 
-def cumavg(array, step=1):
+def cumulative_average(array, step=1):
     """Compute cumulative average of ``array``.
 
-    The result is an array, such that, for all 0 <= i <= k*step
+    The result is an array cumulative_avg, s.t., for all 0 <= i < len(array)
 
-    cumavg[i] = (array[0] + array[step] + ... + array[k*step]) / (k + 1),
-
-    where k = floor(len(array) / step).
+        cumulative_avg[i] = (array[0] + array[1] + ... + array[i]) / (i + 1).
 
     Arguments
     ---------
     array : iterable
         Input array.
 
-    step : int
-        Step size (only every step-th value of ``array`` is considered).
-
     Returns
     -------
     A (k + 1) x 1 array of cumulative averages.
     """
-    array = np.array(array)
-    avg = np.cumsum(array[::step, :], dtype=float)
+    avg = np.cumsum(np.asarray(array), dtype=float)
     avg /= np.arange(1, len(avg) + 1)
-    avg = np.reshape(avg, (-1, 1))
     return avg
-
-
-def avg(array, step=1):
-    """Compute the average of ``array`` taking into account only every
-    ``step``-th value.
-    """
-    array = np.array(array)
-    return np.reshape(np.mean(array[::step]), (-1, 1))
 
 
 class GibbsSampler:
@@ -91,13 +76,11 @@ class GibbsSampler:
         prob = bprop.normalize(prob)
         return npr.choice(v_domain, p=np.exp(prob))
 
-    def run(self, niter, burnin=0, init_state=None, fcum=cumavg):
-        """Run Gibbs sampler to obtain ``niter`` samples.
+    def run(self, niter, burnin=0, step=1, init_state=None):
+        """Run a Gibbs sampler to estimate marginals using ``niter`` samples.
 
         Optionally, use a burn-in period during which samples are discarded,
-        and specify (part of) the starting state. Furthermore, a function
-        ``fcum`` for approximating marginals can be specified (see
-        ``get_marginals`` for more details).
+        and specify (part of) the starting state.
 
         Arguments
         ---------
@@ -107,12 +90,15 @@ class GibbsSampler:
         burnin : int
             Length of burn-in period.
 
+        step : int
+            Every ``step``-th point will be considered in the average.
+
+            For example, if ``step=5``, then the following samples will be
+            averaged: 0, 5, 10, 15, ...
+
         init_state : dict
             Starting state. Can be specified partially by only providing
             initial values for a subset of all variables.
-
-        fcum : fun
-            Function for computing marginals (see ``get_marginals``).
 
         Returns
         -------
@@ -124,8 +110,7 @@ class GibbsSampler:
         samples = {v: [] for v in variables}
         # If not specified, the initial value of each variable is drawn
         # uniformly at random.
-        state = {v: npr.choice(vnode.domain)
-                 for v, vnode in self.vs.items()}
+        state = {v: npr.choice(vnode.domain) for v, vnode in self.vs.items()}
         if init_state is not None:
             state.update(init_state)
         # Burn-in period: samples are drawn and discarded.
@@ -136,19 +121,18 @@ class GibbsSampler:
         for it in range(niter):
             current_variable = npr.choice(variables)
             state[current_variable] = self.sample_var(current_variable, state)
-            for v in variables:
-                samples[v].append(state[v])
-        marg = self.get_marginals(samples, fcum)
+            if it % step == 0:   # Take every ``step``-th sample.
+                for v in variables:
+                    samples[v].append(state[v])
+        marginals = self.get_marginals(samples)
         domains = {v.name: v.orig_domain for v in self.vs.values()}
-        return (marg, domains, self.fgraph.vobs)
+        return (marginals, domains, self.fgraph.vobs)
 
-    def get_marginals(self, samples, fcum):
-        """Compute approximate marginals by applying ``fcum`` to ``samples``.
+    def get_marginals(self, samples):
+        """Compute approximate marginals.
 
         For every value a variable can take, a binary indicator array is
         created that indicates at which iterations the variable had that value.
-        Then, the given function ``fcum`` is applied to each of those binary
-        arrays. ``fcum`` should return a r x 1 array (r >= 1).
 
         Arguments
         ---------
@@ -156,25 +140,19 @@ class GibbsSampler:
             Dictionary that maps each variable to its samples as produced by
             the Gibbs sampler.
 
-        fcum : fun
-            A function that computes a r x 1 array per variable.
-
         Returns
         -------
-        A dictionary that maps each variable v to a r x |domain(v)| array,
-        i.e., each column contains the results of ``fcum`` for each value of v.
+        A dictionary that maps each variable v to a N x |domain(v)| array,
+        where the i-th column holds the estimated marginals after i samples.
         """
         niter = len(samples.values()[0])
         assert niter >= 1
-        marg = {v: None for v in samples}
+        marginals = {
+            v: np.zeros((niter, len(self.vs[v].domain))) for v in samples}
         for v in samples:
             v_samples = np.array(samples[v])
-            for d in self.vs[v].domain:
+            for i, d in enumerate(self.vs[v].domain):
                 bin_array = np.zeros((niter, 1))
                 bin_array[v_samples == d] = 1
-                cum = fcum(bin_array)
-                if marg[v] is None:
-                    marg[v] = cum
-                else:
-                    marg[v] = np.hstack((marg[v], cum))
-        return marg
+                marginals[v][:, i] = cumulative_average(bin_array)
+        return marginals
