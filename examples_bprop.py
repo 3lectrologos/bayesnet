@@ -56,7 +56,7 @@ def bn_naive_bayes():
     return g
 
 
-# The earthquake network from Problem Set 3.
+# The earthquake network from Problem Set 4.
 def bn_earthquake():
     g = core.BayesNet()
     g.add_variable('Earthquake', (0, 1))
