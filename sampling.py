@@ -54,7 +54,6 @@ class GibbsSampler:
         self.fgraph.condition(observations)
         self.update_fgraph()
 
-    # NOTE: We could precompute/memoize the posteriors for more efficiency.
     def sample_var(self, v, state):
         """Sample a value of variable ``v`` from its posterior given ``state``.
 
@@ -78,16 +77,13 @@ class GibbsSampler:
         prob = np.zeros(len(v_domain))
         for d in v_domain:
             for fnode in self.vs[v].neighbors:
-                # Add variables one by one to create the combination that has
-                # the same values as the current state for all other variables
-                # in the factor and a value of d for variable v.
-                comb = []
-                for fnode_var in fnode.variables:
-                    if fnode_var == v:
-                        comb.append(d)
-                    else:
-                        comb.append(state[fnode_var])
-                prob[d] += fnode.table[tuple(comb)]
+                # TODO: Add variables one by one to create the combination that
+                # has the same values as the current state for all other
+                # variables in the factor and a value of d for variable v.
+                # Then, update the respective entry of prob according to the
+                # value of the combination (remember entries of prob are in the
+                # log domain).
+                pass
         prob = bprop.normalize(prob)
         return npr.choice(v_domain, p=np.exp(prob))
 
@@ -130,12 +126,11 @@ class GibbsSampler:
             state.update(init_state)
         # Burn-in period: samples are drawn and discarded.
         for it in range(burnin):
-            current_variable = npr.choice(variables)
-            state[current_variable] = self.sample_var(current_variable, state)
+            pass
+            # TODO: Choose a variable, draw a new value, and update the state.
         # Actual recorded sampling.
         for it in range(niter):
-            current_variable = npr.choice(variables)
-            state[current_variable] = self.sample_var(current_variable, state)
+            # TODO: Choose a variable, draw a new value, and update the state.
             for v in variables:
                 samples[v].append(state[v])
         marg = self.get_marginals(samples, fcum)

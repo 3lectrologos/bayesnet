@@ -20,22 +20,3 @@ sampler.condition({'X1': 'H', 'X2': 'T', 'X3': 'H'})
 marg = sampler.run(10000, burnin=100)
 bprop.draw_marginals(marg, markers=False)
 plt.show()
-
-# Earthquake network from Problem Set 3.
-bn = examples_bprop.bn_earthquake()
-g = bprop.FactorGraph(bn)
-sampler = sampling.GibbsSampler(g)
-
-marg = sampler.run(20000, burnin=100)
-bprop.draw_marginals(marg, markers=False)
-plt.show()
-
-sampler.condition({'Phone': 1})
-marg = sampler.run(20000, burnin=100)
-bprop.draw_marginals(marg, markers=False)
-plt.show()
-
-sampler.condition({'Radio': 1})
-marg = sampler.run(20000, burnin=100)
-bprop.draw_marginals(marg, markers=False)
-plt.show()
