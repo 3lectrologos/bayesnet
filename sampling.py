@@ -1,3 +1,4 @@
+from itertools import cycle, islice
 import numpy as np
 import numpy.random as npr
 import bprop
@@ -113,15 +114,11 @@ class GibbsSampler:
         state = {v: npr.choice(vnode.domain) for v, vnode in self.vs.items()}
         if init_state is not None:
             state.update(init_state)
-        # Burn-in period: samples are drawn and discarded.
-        for it in range(burnin):
-            current_variable = npr.choice(variables)
-            state[current_variable] = self.sample_var(current_variable, state)
-        # Actual recorded sampling.
-        for it in range(niter):
-            current_variable = npr.choice(variables)
-            state[current_variable] = self.sample_var(current_variable, state)
-            if it % step == 0:   # Take every ``step``-th sample.
+        n_iterations = niter + burnin
+        for it, variable in enumerate(islice(cycle(variables), n_iterations)):
+            state[variable] = self.sample_var(variable, state)
+            # Ignore burnin samples, otherwise take every ``step``-th sample.
+            if it >= burnin and (it - burnin) % step == 0:
                 for v in variables:
                     samples[v].append(state[v])
         marginals = self.get_marginals(samples)
