@@ -58,14 +58,17 @@ class VariableNode(Node):
             The target factor, which should be a neighbor in the factor graph.
         """
         msg = np.zeros(len(self.domain))
-        # TODO: Create the message to be sent to factor ``target``.
+        for fnode in self.neighbors:
+            if fnode != target:
+                msg += self.received[fnode]
         target.receive(self, normalize(msg))
 
     def marginal(self):
         """Compute the marginal probability distribution of this variable."""
-        # TODO: Compute the marginal of this variable using all received
-        #       messages. Function ``normalize`` might be useful here.
-        return 0.5 * np.ones(len(self.domain))
+        m = np.zeros(len(self.domain))
+        for fnode in self.neighbors:
+            m += self.received[fnode]
+        return np.exp(normalize(m))
 
 
 class FactorNode(Node):
@@ -115,14 +118,12 @@ class FactorNode(Node):
         target_index = self.neighbors.index(target)
         msg = -np.Inf * np.ones(len(target.domain))
         for comb, fvalue in self.table.items():
-            # TODO: Create the message to be sent to variable node target.
-            #
-            #       Since probabilities are in the log domain, you can use the
-            #       numerically stable function np.logaddexp in the places
-            #       would need to sum two values in the original domain:
-            #
-            #           logaddexp(a, b) = log(exp(a) + exp(b)).
-            pass
+            s = 0
+            for i, vnode in enumerate(self.neighbors):
+                if vnode != target:
+                    s += self.received[vnode][comb[i]]
+            s += fvalue
+            msg[comb[target_index]] = np.logaddexp(msg[comb[target_index]], s)
         target.receive(self, msg)
 
 
