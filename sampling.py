@@ -1,4 +1,3 @@
-from itertools import cycle, islice
 import numpy as np
 import numpy.random as npr
 import bprop
@@ -115,7 +114,9 @@ class GibbsSampler:
         if init_state is not None:
             state.update(init_state)
         n_iterations = niter + burnin
-        for it, variable in enumerate(islice(cycle(variables), n_iterations)):
+        variable = npr.choice(variables)
+        for it in range(n_iterations):
+            variable = npr.choice(variables)
             state[variable] = self.sample_var(variable, state)
             # Ignore burnin samples, otherwise take every ``step``-th sample.
             if it >= burnin and (it - burnin) % step == 0:
