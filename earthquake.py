@@ -33,8 +33,8 @@ bn.add_cpt('Alarm', 'Phone',
 bn.add_cpt('Earthquake', 'Radio',
            {(0, 1): 0,
             (0, 0): 1,
-            (1, 0): 0.1,
-            (1, 1): 0.9})
+            (1, 0): 0.5,
+            (1, 1): 0.5})
 
 # Create factor graph.
 g = bprop.FactorGraph(bn)
