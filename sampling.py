@@ -1,4 +1,3 @@
-from itertools import cycle, islice
 import numpy as np
 import numpy.random as npr
 import bprop
@@ -63,13 +62,13 @@ class GibbsSampler:
         prob = np.zeros(len(v_domain))
         for d in v_domain:
             for fnode in self.vs[v].neighbors:
-                # TODO: Add variables one by one to create the combination that
-                # has the same values as the current state for all other
-                # variables in the factor and a value of d for variable v.
-                # Then, update the respective entry of prob according to the
-                # value of the combination (remember entries of prob are in the
-                # log domain).
-                pass
+                comb = []
+                for fnode_var in fnode.variables:
+                    if fnode_var == v:
+                        comb.append(d)
+                    else:
+                        comb.append(state[fnode_var])
+                prob[d] += fnode.table[tuple(comb)]
         prob = bprop.normalize(prob)
         return npr.choice(v_domain, p=np.exp(prob))
 
@@ -112,8 +111,8 @@ class GibbsSampler:
             state.update(init_state)
         n_iterations = niter + burnin
         for it in range(n_iterations):
-            # TODO: Select a variable uniformly at random, draw a new value
-            # for that variable, and update the state.
+            variable = npr.choice(variables)
+            state[variable] = self.sample_var(variable, state)
             # Ignore burnin samples, otherwise take every ``step``-th sample.
             if it >= burnin and (it - burnin) % step == 0:
                 for v in variables:
