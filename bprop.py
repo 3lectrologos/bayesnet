@@ -290,7 +290,9 @@ class FactorGraph:
             found = False
             for fnode in self.fs:
                 if len(fnode.variables) == 1 and fnode.variables[0] == name:
-                    fnode.table = table
+                    fnew = FactorNode(self, (name,), table)
+                    fnode.table = fnew.table
+                    found = True
             if not found:
                 fnode = self.add_factor((name,), table)
 
