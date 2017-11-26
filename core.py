@@ -1,8 +1,3 @@
-"""
-PAI: Homework 3 --- d-separation in Bayesian networks
-=====================================================
-"""
-
 import networkx as nx
 
 
