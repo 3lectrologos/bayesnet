@@ -1,6 +1,6 @@
-git archive -o hw3.zip --prefix hw3/ dsep
-git archive -o hw3_sol.zip --prefix hw3_sol/ dsep_solution
-git archive -o hw4.zip --prefix hw4/ bprop
-git archive -o hw4_sol.zip --prefix hw4_sol/ bprop_solution
-git archive -o hw5.zip --prefix hw5/ sampling
-git archive -o hw5_sol.zip --prefix hw5_sol/ sampling_solution
+git archive -o hw2.zip --prefix hw2/ dsep
+git archive -o hw2-sol.zip --prefix hw2-sol/ dsep_solution
+git archive -o hw3.zip --prefix hw3/ bprop
+git archive -o hw3-sol.zip --prefix hw3-sol/ bprop_solution
+git archive -o hw4.zip --prefix hw4/ sampling
+git archive -o hw4-sol.zip --prefix hw4-sol/ sampling_solution
